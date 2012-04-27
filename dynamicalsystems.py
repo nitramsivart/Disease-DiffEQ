@@ -2,9 +2,39 @@ from math import sin, exp, tan, atanh, pi, cos, floor
 from numpy import arange, zeros, convolve
 from pylab import plot,xlabel,ylabel,show
 from multiprocessing import Pool
+from scipy import linalg, array
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
-import sys
+
+thetaresolution = .4
+tresolution = .2
+
+tstart = 0.0
+tend = 90
+
+thetastart = -100
+thetaend = 100
+
+sign = -1
+
+velocity = 80
+start_val = .5
+
+def initial_condition(power):
+  if abs(power) < 1:
+    return 1 - exp(-1./(1-power**2))/10
+  else:
+    return 1.
+  '''
+  upoints1[0][i] = start_val
+  upoints1[0][i] = 1.0 - float(i)/(thetasize - 1)
+  upoints1[0][i] = 1.0 - 1.0/(1.0+exp(-power))
+  upoints2[0][i] = 1.0 - 1.0/(1.0+exp(-power))
+  upoints3[0][i] = 1.0 - 1.0/(1.0+exp(-power/3))
+  upoints4[0][i] = 1.0 - 1.0/(1.0+exp(-power/2))
+  upoints5[0][i] = 1.0 - 1.0/(1.0+exp(-power/1.5))
+  '''
+
 
 def map_fn(theta):
   return theta
@@ -41,6 +71,11 @@ def delta1(d):
   else:
     return 0
 
+def power1(d):
+  r_0 = 1
+  alpha = 1
+  return (1 + (abs(d)*r_0)**(alpha))**(-1)
+  return d**(-1)
 
 def compute_coeff(index, size):
   if index is 0 or index is (size - 1):
@@ -72,20 +107,27 @@ def integral(u, beta, v):
       coeff2 = compute_coeff(yprime, thetasize)
       conv[y] += coeff2 * (beta(map_fn(thetavals[y])-map_fn(thetavals[yprime])) * u[yprime]) * d_map_fn(thetavals[yprime])
     conv[y] = conv[y] * thetaresolution / 3
+  
+  #calculate new values using implicit method
+  h = tresolution
+  a = thetaresolution
 
-  for currenty in range(thetasize):
-    #calculate df/fx at currenty
-    deriv = compute_deriv(u, currenty, thetaresolution)
+  A = array([[h/(2*a)]*(thetasize), [sign * 1.]*(thetasize), [-h/(2*a)]*(thetasize)])
+  v = (array([h*(-1/float(v))*(1-u[x])*conv[x] + sign * u[x] for x in range(thetasize)])).T
+  v[0] = v[0] + h/(2*a) * u[0]
+  v[thetasize-1] = v[thetasize-1] - h/(2*a) * u[thetasize-1]
 
-    #calculate right side
-    right_side = -1/float(v) * (1 - u[currenty]) * conv[currenty] * d_map_fn(thetavals[currenty])
-
-    #calculate df/dt
-    change[currenty] = tresolution * (deriv - right_side)
-
-  return change 
+  sol = linalg.solve_banded((1,1), A, v)
+  '''
+  print A
+  print v
+  print sol
+  '''
+  return sol
 
 def do_runge_kutta(u, beta, v):
+  return integral(u, beta, v)
+
   k1 = integral(u, beta, v)
   k2 = integral(u+.5*k1, beta, v)
   k3 = integral(u+.5*k2, beta, v)
@@ -133,14 +175,6 @@ def rescale(ret):
         ret[i] = ret[i+difference]
   return ret
 
-thetaresolution = .3
-tresolution = .1
-
-tstart = 0.0
-tend = 30
-
-thetastart = -15
-thetaend = 15
 
 # the x-range of our algorithm
 thetasize = int((thetaend-thetastart)/thetaresolution + 1)
@@ -197,23 +231,14 @@ def update_line2(num, data, line):
 # only one person infected
 for i in range(thetasize):
   power = map_fn(thetavals[i])
+  upoints1[0][i] = initial_condition(power)
 
-  upoints1[0][i] = 1.0 - 1.0/(1.0+exp(-power))
-  upoints1[0][i] = 1.0 - float(i)/(thetasize - 1)
-  if abs(power) < .1:
-    upoints1[0][i] = .1 - abs(power)
-  else:
-    upoints1[0][i] = 0
-  upoints2[0][i] = 1.0 - 1.0/(1.0+exp(-power))
-  upoints3[0][i] = 1.0 - 1.0/(1.0+exp(-power/3))
-  upoints4[0][i] = 1.0 - 1.0/(1.0+exp(-power/2))
-  upoints5[0][i] = 1.0 - 1.0/(1.0+exp(-power/1.5))
 
 for t in tpoints[1:len(tpoints)]:
   print (t*tresolution)
 
   u = upoints1[t-1]
-  newu = do_runge_kutta(u, gaussian1, 50)
+  newu = do_runge_kutta(u, gaussian1, velocity)
   upoints1[t] = newu
 
   u = upoints2[t-1]
@@ -234,40 +259,22 @@ for t in tpoints[1:len(tpoints)]:
 
 fig1 = plt.figure(0)
 plt.xlabel('X val')
-plt.title('Time graph of wave' + str(thetaresolution) + ',' + str(tresolution) + ',' + str(tend))
+plt.axis([thetastart, thetaend, 0, 1])
+plt.title('Time graph of wave (power)' + str(velocity) + ', ' + str(start_val))
 l1, = plt.plot(thetavals, upoints1[0], 'r')
 line_ani = animation.FuncAnimation(fig1, update_line1, tsize, init_line1, fargs=(upoints1, l1), interval=tresolution*100, blit=True)
 
 #fig2 = plt.figure(1)
-plt.xlabel('X val')
-plt.title('Time graph of wave' + str(thetaresolution) + ',' + str(tresolution) + ',' + str(tend))
+#plt.xlabel('X val')
+#plt.title('Time graph of wave' + str(thetaresolution) + ',' + str(tresolution) + ',' + str(tend))
 #l2, = plt.plot(thetavals, upoints2[0], 'b')
 #line_ani2 = animation.FuncAnimation(fig2, update_line2, tsize, init_line2, fargs=(upoints2, l2), interval=tresolution*50, blit=True)
 
-'''
-for t in tpoints:
-  plt.figure(t / 5)
-  plt.xlabel('X val')
-  plt.title('Time graph of wave, iteration #' + str(t))
-
-  x1 = list(map_fn(v) for v in thetavals)
-  x3 = list(map_fn(v)*2 for v in thetavals)
-  x5 = list(map_fn(v)*4 for v in thetavals)
-
-  plt.scatter(x1, upoints1[t], color = 'b')
-  #plt.scatter(x, upoints2[t], color = 'r')
-  #plt.scatter(x3, upoints3[t], color = 'g')
-  #plt.scatter(x, upoints4[t], color = 'k')
-  #plt.scatter(x5, upoints5[t], color = 'y')
-'''
 plt.figure(len(tpoints))
 plt.xlabel('Distance')
 plt.title('Beta functions')
 
 plt.scatter(thetavals, list(gaussian1(abs(map_fn(x))) for x in thetavals), color = 'b')
-plt.scatter(thetavals, list(gaussian1(abs(map_fn(x))) for x in thetavals), color = 'r')
-#plt.scatter(x1, list(gaussian3(map_fn(x)) for x in thetavals), color = 'g')
-#plt.scatter(x, list(gaussian4(map_fn(x)) for x in thetavals), color = 'k')
-#plt.scatter(x1, list(gaussian5(map_fn(x)) for x in thetavals), color = 'y')
+#plt.scatter(thetavals, list(power1(abs(map_fn(x))) for x in thetavals), color = 'r')
 
 plt.show()
