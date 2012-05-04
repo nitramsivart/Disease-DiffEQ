@@ -10,29 +10,26 @@ thetaresolution = .4
 tresolution = .2
 
 tstart = 0.0
-tend = 90
+tend = 20
 
-thetastart = -100
-thetaend = 100
+thetastart = -30
+thetaend = 30
 
 sign = -1
 
-velocity = 80
+velocity = 40
 start_val = .5
 
 def initial_condition(power):
-  if abs(power) < 1:
-    return 1 - exp(-1./(1-power**2))/10
+  if abs(power) < .5:
+    return exp(-1./(1-power**2))/20
   else:
-    return 1.
+    return 0.
+  return 1.0 - 1.0/(1.0+exp(-power))
   '''
   upoints1[0][i] = start_val
   upoints1[0][i] = 1.0 - float(i)/(thetasize - 1)
   upoints1[0][i] = 1.0 - 1.0/(1.0+exp(-power))
-  upoints2[0][i] = 1.0 - 1.0/(1.0+exp(-power))
-  upoints3[0][i] = 1.0 - 1.0/(1.0+exp(-power/3))
-  upoints4[0][i] = 1.0 - 1.0/(1.0+exp(-power/2))
-  upoints5[0][i] = 1.0 - 1.0/(1.0+exp(-power/1.5))
   '''
 
 
@@ -118,11 +115,6 @@ def integral(u, beta, v):
   v[thetasize-1] = v[thetasize-1] - h/(2*a) * u[thetasize-1]
 
   sol = linalg.solve_banded((1,1), A, v)
-  '''
-  print A
-  print v
-  print sol
-  '''
   return sol
 
 def do_runge_kutta(u, beta, v):
