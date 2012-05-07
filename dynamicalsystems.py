@@ -92,7 +92,7 @@ def compute_deriv(f, xindex, xwidth):
 
 # This is the integral from 0 to N of:
 # B(x-x')u(x',t) dx'
-def integral(u, beta, v):
+def integral(u, beta, vel):
   change = u.copy()
   flag = True
 
@@ -110,7 +110,7 @@ def integral(u, beta, v):
   a = thetaresolution
 
   A = array([[h/(2*a)]*(thetasize), [sign * 1.]*(thetasize), [-h/(2*a)]*(thetasize)])
-  v = (array([h*(-1/float(v))*(1-u[x])*conv[x] + sign * u[x] for x in range(thetasize)])).T
+  v = (array([h*(-1/float(vel))*(1-u[x])*conv[x] + sign * u[x] for x in range(thetasize)])).T
   v[0] = v[0] + h/(2*a) * u[0]
   v[thetasize-1] = v[thetasize-1] - h/(2*a) * u[thetasize-1]
 

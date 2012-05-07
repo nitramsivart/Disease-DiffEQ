@@ -6,21 +6,22 @@ from scipy import linalg, array
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 
-thetaresolution = .4
-tresolution = .2
+thetaresolution = .1
+tresolution = .1
 
 tstart = 0.0
-tend = 20
+tend = 100
 
-thetastart = -30
-thetaend = 30
+thetastart = -50
+thetaend = 50
 
 sign = -1
 
-velocity = 40
+velocity = 5.
 start_val = .5
 
 def initial_condition(power):
+  return 1.
   if abs(power) < .5:
     return exp(-1./(1-power**2))/20
   else:
@@ -76,11 +77,11 @@ def power1(d):
 
 def compute_coeff(index, size):
   if index is 0 or index is (size - 1):
-    return 1
+    return 1.
   elif index % 2 is 0:
-    return 2
+    return 2.
   else:
-    return 4
+    return 4.
 
 def compute_deriv(f, xindex, xwidth):
   if xindex == (len(f) - 1):
@@ -90,32 +91,51 @@ def compute_deriv(f, xindex, xwidth):
   else:
     return (f[xindex + 1] - f[xindex - 1]) / (2 * xwidth)
 
+# calculate B(y) = B(x-x'') = integral from x'' to infty of Beta(x-x') dx'
+# for now, this only works for symmetric x range
+# the smallest value in val corresponds to x = thetamin, x'' = thetamax, y = 2thetamin
+# the largest value in val corresponds to x = thetamax, x'' = thetamin, y = 2thetamax
+# values are stored by index difference (but shifted by thetavals, to make all positive, not x value
+def compute_B(beta):
+  length = thetasize * 2
+  val = [0.0] * length
+
+  high_val = length
+
+  # calculate the beginning part
+  beg_total = 0.
+  for xp in range(0, high_val):
+    xpval = 2*thetastart + thetaresolution * float(xp)
+    beg_total += thetaresolution * beta(-xpval)
+
+  # we are calculating the values backwards to make O(n)
+  a = range(length)
+  a.reverse()
+
+  total = beg_total
+  for y in a:
+    xp = length - y - 1
+    xpval = 2*thetastart + thetaresolution * float(xp)
+    total += thetaresolution * beta(-xpval)
+    val[y] = total
+  return val
+
 # This is the integral from 0 to N of:
 # B(x-x')u(x',t) dx'
-def integral(u, beta, v):
+def integral(u, beta, vel):
   change = u.copy()
   flag = True
 
-  #precalculate convolution:
-  conv = [0.0] * thetasize
-  for y in range(thetasize):
-    conv[y] = 0.0
-    for yprime in range(thetasize):
-      coeff2 = compute_coeff(yprime, thetasize)
-      conv[y] += coeff2 * (beta(map_fn(thetavals[y])-map_fn(thetavals[yprime])) * u[yprime]) * d_map_fn(thetavals[yprime])
-    conv[y] = conv[y] * thetaresolution / 3
+  #precalculate integral of beta up to x
+  integral = [0.0] * thetasize
+  B = compute_B(beta)
+  for x in range(thetasize):
+    for xpp in range(thetasize):
+      coeff2 = compute_coeff(xpp, thetasize)
+      integral[x] += coeff2 * (B[thetasize + (x - xpp)] * (1-exp(-u[xpp])))
+    integral[x] = (1./vel) * integral[x] * thetaresolution / 3.
   
-  #calculate new values using implicit method
-  h = tresolution
-  a = thetaresolution
-
-  A = array([[h/(2*a)]*(thetasize), [sign * 1.]*(thetasize), [-h/(2*a)]*(thetasize)])
-  v = (array([h*(-1/float(v))*(1-u[x])*conv[x] + sign * u[x] for x in range(thetasize)])).T
-  v[0] = v[0] + h/(2*a) * u[0]
-  v[thetasize-1] = v[thetasize-1] - h/(2*a) * u[thetasize-1]
-
-  sol = linalg.solve_banded((1,1), A, v)
-  return sol
+  return integral
 
 def do_runge_kutta(u, beta, v):
   return integral(u, beta, v)
@@ -208,7 +228,9 @@ def init_line1():
   return l1,
 
 def update_line1(num, data, line):
-  line.set_data(thetavals, upoints1[num])
+  #vals = list(1-exp(-y) for y in upoints1[num])
+  vals = list(y for y in upoints1[num])
+  line.set_data(thetavals, vals)
   return line,
 
 def init_line2():
@@ -235,26 +257,34 @@ for t in tpoints[1:len(tpoints)]:
 
   u = upoints2[t-1]
   #newu = do_runge_kutta(u, gaussian1, 140)
-  upoints2[t] = newu
+  #upoints2[t] = newu
 
   u = upoints3[t-1]
   #newu = integral(u, gaussian3)
-  upoints3[t] = newu
+  #upoints3[t] = newu
 
   u = upoints4[t-1]
   #newu = integral(u, gaussian4)
-  upoints4[t] = newu
+  #upoints4[t] = newu
   
   u = upoints5[t-1]
   #newu = integral(u, gaussian5)
-  upoints5[t] = newu
+  #upoints5[t] = newu
 
 fig1 = plt.figure(0)
 plt.xlabel('X val')
-plt.axis([thetastart, thetaend, 0, 1])
-plt.title('Time graph of wave (power)' + str(velocity) + ', ' + str(start_val))
+plt.axis([thetastart, thetaend, 0, 100])
+plt.title('Time graph of wave' + str(velocity) + ', ' + str(start_val))
 l1, = plt.plot(thetavals, upoints1[0], 'r')
 line_ani = animation.FuncAnimation(fig1, update_line1, tsize, init_line1, fargs=(upoints1, l1), interval=tresolution*100, blit=True)
+
+'''
+fig2 = plt.figure(3)
+plt.plot(thetavals, upoints1[1])
+
+fig3 = plt.figure(4)
+plt.plot(thetavals, upoints1[2])
+'''
 
 #fig2 = plt.figure(1)
 #plt.xlabel('X val')
