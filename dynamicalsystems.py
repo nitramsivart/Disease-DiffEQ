@@ -6,26 +6,26 @@ from scipy import linalg, array
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 
-thetaresolution = .4
-tresolution = .2
+thetaresolution = .1
+tresolution = 1
 
 tstart = 0.0
 tend = 20
 
-thetastart = -30
-thetaend = 30
+thetastart = -50
+thetaend = 50
 
 sign = -1
 
-velocity = 40
+velocity = 4.0
 start_val = .5
 
 def initial_condition(power):
+  return 1.0 - 1.0/(1.0+exp(-power))
   if abs(power) < .5:
     return exp(-1./(1-power**2))/20
   else:
     return 0.
-  return 1.0 - 1.0/(1.0+exp(-power))
   '''
   upoints1[0][i] = start_val
   upoints1[0][i] = 1.0 - float(i)/(thetasize - 1)
@@ -110,7 +110,7 @@ def integral(u, beta, vel):
   a = thetaresolution
 
   A = array([[h/(2*a)]*(thetasize), [sign * 1.]*(thetasize), [-h/(2*a)]*(thetasize)])
-  v = (array([h*(-1/float(vel))*(1-u[x])*conv[x] + sign * u[x] for x in range(thetasize)])).T
+  v = (array([h*(-1./float(vel))*(1-u[x])*conv[x] + sign * u[x] for x in range(thetasize)])).T
   v[0] = v[0] + h/(2*a) * u[0]
   v[thetasize-1] = v[thetasize-1] - h/(2*a) * u[thetasize-1]
 

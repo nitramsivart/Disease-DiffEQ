@@ -16,7 +16,7 @@ def B(d):
   e = c*exp(-r * abs(d))
   g = exp(-1 * (d**2) / 2)
 
-  return e
+  return g
 
 
 # This is the integral from 0 to N of:
@@ -58,14 +58,14 @@ def update_line(num, data, line):
 def f(u, reduction_factor):
   return (1-u) * integral(u, reduction_factor)
 
-xresolution = .5
-tresolution = .5
+xresolution = .2
+tresolution = .1
 
 tstart = 0.0
-tend = 60
+tend = 8
 
 xstart = 0.0
-xend = 1000
+xend = 100
 
 '''
 if(len(sys.argv) > 4):
@@ -105,8 +105,10 @@ read in data
 
 # set the initial conditions,
 # only one person infected
-for i in range(xsize/9):
-  upoints[0][i] = 1.0
+for i in range(xsize):
+  if(i < 20):
+    upoints[0][i] = 1
+    #upoints[0][i] = 1.0 - 1.0/(1.0+exp(-(i-10.)))
 
 data = open('./data%f-%f-%f-%f-%f-%f-r%f-c%f.txt' % (xresolution, xstart, xend, tresolution, tstart, tend, r, c), 'w')
 
@@ -122,7 +124,7 @@ for t in tpoints:
     elif upoints[t][x] < margin and last == xsize - 1:
       last = x
   width = (last - first)
-  reduction_factor = int(width/11)+1
+  reduction_factor = min(3, int(width/11)+1)
   print "Reduction factor: %d" % reduction_factor
 
 

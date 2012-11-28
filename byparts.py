@@ -7,20 +7,24 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 
 thetaresolution = .1
-tresolution = .1
+tresolution = 5
 
 tstart = 0.0
-tend = 100
+tend = 20
 
 thetastart = -50
 thetaend = 50
 
 sign = -1
 
-velocity = 5.
+velocity = 4.
 start_val = .5
 
 def initial_condition(power):
+  if power > 0:
+    return power*2.
+  else:
+    return 0.
   return 1.
   if abs(power) < .5:
     return exp(-1./(1-power**2))/20
@@ -70,10 +74,9 @@ def delta1(d):
     return 0
 
 def power1(d):
-  r_0 = 1
-  alpha = 1
-  return (1 + (abs(d)*r_0)**(alpha))**(-1)
-  return d**(-1)
+  r_0 = 5.
+  alpha = 1.
+  return (1. + (abs(d)*r_0)**(alpha))**(-1)
 
 def compute_coeff(index, size):
   if index is 0 or index is (size - 1):
@@ -102,17 +105,17 @@ def compute_B(beta):
 
   high_val = length
 
-  # calculate the beginning part
-  beg_total = 0.
+  # calculate the end part
+  end_total = 0.
   for xp in range(0, high_val):
-    xpval = 2*thetastart + thetaresolution * float(xp)
-    beg_total += thetaresolution * beta(-xpval)
+    xpval = 2*thetaend + thetaresolution * float(xp)
+    end_total += thetaresolution * beta(-xpval)
 
   # we are calculating the values backwards to make O(n)
   a = range(length)
-  a.reverse()
+  #a.reverse()
 
-  total = beg_total
+  total = end_total
   for y in a:
     xp = length - y - 1
     xpval = 2*thetastart + thetaresolution * float(xp)
@@ -228,7 +231,7 @@ def init_line1():
   return l1,
 
 def update_line1(num, data, line):
-  #vals = list(1-exp(-y) for y in upoints1[num])
+  vals = list(1-exp(-y) for y in upoints1[num])
   vals = list(y for y in upoints1[num])
   line.set_data(thetavals, vals)
   return line,
@@ -280,7 +283,7 @@ line_ani = animation.FuncAnimation(fig1, update_line1, tsize, init_line1, fargs=
 
 '''
 fig2 = plt.figure(3)
-plt.plot(thetavals, upoints1[1])
+plt.plot(compute_B(gaussian1))
 
 fig3 = plt.figure(4)
 plt.plot(thetavals, upoints1[2])

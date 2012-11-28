@@ -165,7 +165,7 @@ for i in range(thetasize):
   upoints2[0][i] = 1.0 - 1.0/(1.0+exp(-power/4))
   upoints3[0][i] = 1.0 - 1.0/(1.0+exp(-power/3))
   upoints4[0][i] = 1.0 - 1.0/(1.0+exp(-power/2))
-  upoints5[0][i] = 1.0 - 1.0/(1.0+exp(-power/1.5))
+  upoints5[0][i] = 1.0 - 1.0/(1.0+exp(-power/1))
 
 for t in tpoints[1:len(tpoints)]:
   print (t*tresolution)
@@ -179,7 +179,7 @@ for t in tpoints[1:len(tpoints)]:
   upoints2[t] = newu
 
   u = upoints3[t-1]
-  newu = integral(u, gaussian3)
+  newu = integral(u, gaussian1)
   upoints3[t] = newu
 
   u = upoints4[t-1]
@@ -187,7 +187,7 @@ for t in tpoints[1:len(tpoints)]:
   upoints4[t] = newu
   
   u = upoints5[t-1]
-  newu = integral(u, gaussian5)
+  newu = integral(u, gaussian1)
   upoints5[t] = newu
 
 for t in tpoints:
@@ -201,9 +201,9 @@ for t in tpoints:
 
   plt.scatter(x1, upoints1[t], color = 'b')
   #plt.scatter(x, upoints2[t], color = 'r')
-  plt.scatter(x3, upoints3[t], color = 'g')
+  plt.scatter(x1, upoints3[t], color = 'g')
   #plt.scatter(x, upoints4[t], color = 'k')
-  plt.scatter(x5, upoints5[t], color = 'y')
+  plt.scatter(x1, upoints5[t], color = 'y')
 
 plt.figure(len(tpoints))
 plt.xlabel('Distance')
@@ -211,7 +211,7 @@ plt.title('Beta functions')
 
 plt.scatter(x1, list(gaussian1(map_fn(x)) for x in thetavals), color = 'b')
 #plt.scatter(x, list(gaussian2(map_fn(x)) for x in thetavals), color = 'r')
-plt.scatter(x1, list(gaussian3(map_fn(x)) for x in thetavals), color = 'g')
+plt.scatter(x1, list(gaussian1(map_fn(x)) for x in thetavals), color = 'g')
 #plt.scatter(x, list(gaussian4(map_fn(x)) for x in thetavals), color = 'k')
-plt.scatter(x1, list(gaussian5(map_fn(x)) for x in thetavals), color = 'y')
+plt.scatter(x1, list(gaussian1(map_fn(x)) for x in thetavals), color = 'y')
 plt.show()
